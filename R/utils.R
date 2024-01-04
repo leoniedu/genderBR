@@ -31,17 +31,12 @@ get_states <- function(){
 
 
 # Internal function to test void names
-test_responses <- function(response1, response2, prob){
-
-  httr::stop_for_status(response1, task = "retrieve IBGE's API data.")
-  httr::stop_for_status(response2, task = "retrieve IBGE's API data.")
-
-  if(length(response1$content) == 2 & length(response2$content) == 2) return(NA)
-  if(length(response1$content) == 2 & length(response2$content) > 2 & prob == TRUE) return(0)
-  if(length(response1$content) > 2 & length(response2$content) == 2 & prob == TRUE) return(1)
-  if(length(response1$content) == 2 & length(response2$content) > 2 & prob == FALSE) return("Male")
-  if(length(response1$content) > 2 & length(response2$content) == 2 & prob == FALSE) return("Female")
-
+test_responses <- function(females_content, males_content, prob){
+  if(length(females_content) == 0 & length(males_content) == 0) return(NA)
+  if(length(females_content) == 0 & length(males_content) > 0 & prob == TRUE) return(0)
+  if(length(females_content) > 0 & length(males_content) == 0 & prob == TRUE) return(1)
+  if(length(females_content) == 0 & length(males_content) > 0 & prob == FALSE) return("Male")
+  if(length(females_content) > 0 & length(males_content) == 0 & prob == FALSE) return("Female")
   NULL
 }
 

@@ -80,7 +80,7 @@
 #' @export
 
 get_gender <- function(names, state = NULL, prob = FALSE, threshold = 0.9,
-                       internal = TRUE, encoding = "ASCII//TRANSLIT"){
+                       internal = TRUE, encoding = "ASCII//TRANSLIT") {
 
 
   # Inputs
@@ -172,25 +172,36 @@ get_gender <- function(names, state = NULL, prob = FALSE, threshold = 0.9,
 
 # Get individual results from API
 get_gender_api <- function(name, state, prob, threshold, pause = pause){
-
-
   # API endpoint
-  ibge <- "https://servicodados.ibge.gov.br/api/v1/censos/nomes/basica"
-
+  ibge <- paste0("https://servicodados.ibge.gov.br/api/v2/censos/nomes/",name)
+  print("requesting from IBGE ...")
   # GET
-  females <- get_safe(ibge, query = list(nome = name, regiao = state, sexo = "f"))
+  females <- get_safe(ibge, query = list(localidade = state, sexo = "f"))
   if(pause) Sys.sleep(0.3)
-  males <- get_safe(ibge, query = list(nome = name, regiao = state, sexo = "m"))
+  males <- get_safe(ibge, query = list(localidade = state, sexo = "m"))
+
+  # get content
+  httr::stop_for_status(males, task = "retrieve IBGE's API data.")
+  httr::stop_for_status(females, task = "retrieve IBGE's API data.")
+
+  females_content <- httr::content(females, as = "parsed")
+  males_content <- httr::content(males, as = "parsed")
 
   # Test responses
   if(is.null(females)) stop("IBGE's API is not responding. Try again later.")
   if(is.null(males)) stop("IBGE's API is not responding. Try again later.")
-  res <- test_responses(females, males, prob)
+  res <- test_responses(females_content, males_content, prob)
   if(!is.null(res)) return(res)
 
   # Parse freq
-  females <- httr::content(females, as = "parsed")[[1]]$freq
-  males <- httr::content(males, as = "parsed")[[1]]$freq
+  females_responses <- females_content[[1]][[4]]
+  ## last available census year
+  females_last <- females_responses[[length(females_responses)]]
+  females <- females_last$frequencia
+  males_responses <- males_content[[1]][[4]]
+  ## last available census year
+  males_last <- males_responses[[length(males_responses)]]
+  males <- males_last$frequencia
 
   # Return
   fprob <- females / sum(females, males)
